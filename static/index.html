@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>손글씨 숫자 인식</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<main class="wrap">
+  <p class="eyebrow">MNIST · MLOps Demo</p>
+  <h1>손글씨 숫자 인식</h1>
+  <p class="sub">아래 칸에 0~9 숫자 하나를 마우스나 터치로 그린 뒤 <b>인식하기</b>를 누르세요.</p>
+
+  <section class="card">
+    <canvas id="pad" width="280" height="280" aria-label="숫자 그리기 캔버스"></canvas>
+    <div class="row">
+      <button id="clear" class="ghost">지우기</button>
+      <button id="go" class="primary">인식하기</button>
+    </div>
+    <p id="status" class="status">숫자를 그려주세요.</p>
+  </section>
+
+  <section class="card" id="result" hidden>
+    <div class="result-head">
+      <span>예측 결과</span>
+      <strong id="digit">-</strong>
+      <span id="conf" class="conf"></span>
+    </div>
+    <ul id="bars" class="bars"></ul>
+  </section>
+  <p class="foot">모델: MNIST로 학습한 다층 퍼셉트론(NumPy). 결과는 모델의 추정치입니다.</p>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>
