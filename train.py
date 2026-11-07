@@ -9,6 +9,7 @@ import argparse
 import gzip
 import json
 import os
+import sys
 import urllib.request
 
 import numpy as np
@@ -25,7 +26,7 @@ def load_mnist():
     for n in FILES:
         p = os.path.join(DATA, n)
         if not os.path.exists(p):
-            print("download", n)
+            print("download", n, file=sys.stderr)
             urllib.request.urlretrieve(URL + n, p)
 
     def rd(n, off):
