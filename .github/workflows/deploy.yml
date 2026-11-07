@@ -33,7 +33,11 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: $env:DOCKERHUB_TOKEN | docker login -u $env:DOCKERHUB_USERNAME --password-stdin
+        run: |
+          # Windows PowerShell treats docker's stderr output as an error under 'Stop', so check the exit code instead
+          $ErrorActionPreference = "Continue"
+          $env:DOCKERHUB_TOKEN | docker login -u $env:DOCKERHUB_USERNAME --password-stdin 2>&1 | Out-Host
+          if ($LASTEXITCODE -ne 0) { throw "docker login failed" }
 
       - name: Zero-downtime deploy (blue/green) with live monitoring
         shell: powershell
@@ -49,4 +53,7 @@ jobs:
       - name: Log out of Docker Hub
         if: always()
         shell: powershell
-        run: docker logout
+        run: |
+          $ErrorActionPreference = "Continue"
+          docker logout 2>&1 | Out-Host
+          exit 0

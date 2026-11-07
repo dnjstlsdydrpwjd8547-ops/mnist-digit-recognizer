@@ -196,3 +196,4 @@ $summary = $md.ToString()
 if ($env:GITHUB_STEP_SUMMARY) { [IO.File]::AppendAllText($env:GITHUB_STEP_SUMMARY, $summary, $Utf8) }
 Write-Host $summary
 if ($fail -gt 0) { exit 1 }
+exit 0
