@@ -1,6 +1,9 @@
 """손글씨 숫자 인식 웹앱 (FastAPI + NumPy MLP, MNIST 학습)"""
 import base64
 import io
+import json
+import os
+import socket
 from pathlib import Path
 
 import numpy as np
@@ -11,12 +14,16 @@ from PIL import Image, ImageOps
 from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "model" / "mnist_mlp.npz"
+MODEL_DIR = Path(os.environ.get("MODEL_DIR", BASE_DIR / "model"))
+MODEL_PATH = MODEL_DIR / "mnist_mlp.npz"
+INFO_PATH = MODEL_DIR / "model_info.json"
+APP_VERSION = os.environ.get("APP_VERSION", "dev")  # Docker 이미지 태그(git sha)
 
 app = FastAPI(title="Handwritten Digit Recognizer")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
 _model = None
+_info = None
 
 
 def load_model():
@@ -25,8 +32,16 @@ def load_model():
         if not MODEL_PATH.exists():
             raise RuntimeError(f"모델 파일이 없습니다: {MODEL_PATH} (python train.py 로 생성하세요)")
         d = np.load(MODEL_PATH)
-        _model = [(d[f"W{i}"], d[f"b{i}"]) for i in range(3)]
+        n = len([k for k in d.files if k.startswith("W")])
+        _model = [(d[f"W{i}"], d[f"b{i}"]) for i in range(n)]
     return _model
+
+
+def model_info():
+    global _info
+    if _info is None:
+        _info = json.loads(INFO_PATH.read_text(encoding="utf-8")) if INFO_PATH.exists() else {"version": "unknown"}
+    return _info
 
 
 def preprocess(img: Image.Image) -> np.ndarray:
@@ -82,7 +97,13 @@ def index():
 @app.get("/health")
 def health():
     load_model()
-    return {"status": "ok"}
+    return {"status": "ok", "model_version": model_info().get("version"),
+            "app_version": APP_VERSION, "host": socket.gethostname()}
+
+
+@app.get("/api/model")
+def model_api():
+    return {**model_info(), "app_version": APP_VERSION}
 
 
 @app.post("/predict")
@@ -108,4 +129,7 @@ def predict_api(req: PredictRequest):
         "digit": top,
         "confidence": float(probs[top]),
         "probabilities": [float(p) for p in probs],
+        "model_version": model_info().get("version"),
+        "app_version": APP_VERSION,
+        "host": socket.gethostname(),
     }

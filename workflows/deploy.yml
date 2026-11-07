@@ -1,0 +1,52 @@
+name: CD - Deploy to Windows runner
+
+on:
+  workflow_run:
+    workflows: ["CI - Build & Push Docker Image"]
+    types: [completed]
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-local
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, Windows]
+    env:
+      IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/mnist-digit-recognizer
+      TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Verify Docker is running
+        shell: powershell
+        run: docker version
+
+      - name: Log in to Docker Hub
+        shell: powershell
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: $env:DOCKERHUB_TOKEN | docker login -u $env:DOCKERHUB_USERNAME --password-stdin
+
+      - name: Zero-downtime deploy (blue/green) with live monitoring
+        shell: powershell
+        run: ./deploy/deploy.ps1 -Image $env:IMAGE -Tag $env:TAG
+
+      - name: Upload deployment logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-logs-${{ github.run_number }}
+          path: deploy-logs/
+
+      - name: Log out of Docker Hub
+        if: always()
+        shell: powershell
+        run: docker logout

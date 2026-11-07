@@ -1,0 +1,13 @@
+.git
+.github
+data/
+__pycache__/
+*.pyc
+*.log
+deploy/
+*.bat
+*.ps1
+train.py
+evaluate.py
+requirements-train.txt
+README.md

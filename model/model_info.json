@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "architecture": "MLP 784-512-256-10",
+  "augment": "shift",
+  "epochs": 12,
+  "dropout": 0.0,
+  "test_acc": 0.9873,
+  "robust_acc": 0.9252
+}

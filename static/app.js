@@ -66,3 +66,8 @@ function show(d) {
   });
   document.getElementById("result").hidden = false;
 }
+
+fetch("/api/model").then(r => r.json()).then(m => {
+  document.getElementById("mver").textContent =
+    `${m.version} (${m.architecture}, 테스트 정확도 ${(m.test_acc * 100).toFixed(2)}%)`;
+}).catch(() => {});
